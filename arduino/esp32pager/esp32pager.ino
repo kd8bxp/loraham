@@ -36,7 +36,7 @@
 
 #include <Wire.h>
 
-#include <SSD1306.h>
+#include "SSD1306.h"
 
 #define OLED_RESET  16  // Pin 16 -RESET digital signal
 #define OLED_SDA    4  // SDA-PIN for I2C OLED
@@ -130,6 +130,11 @@ void displaypacket(char *pkt, int len){
 }
 
 void setup() {
+  pinMode(16,OUTPUT);
+  digitalWrite(16, LOW);    // set GPIO16 low to reset OLED
+  delay(50); 
+  digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
+  
    pinMode(LED, OUTPUT);
   Serial.begin(9600);
 
@@ -190,6 +195,10 @@ void pager(){
      * 3. We've waited a random amount of time.
      * 4. The first word is not RT.
      */
+     int packetSize = LoRa.parsePacket();
+     if (packetSize) {
+      digitalWrite(LED, HIGH);
+     
   while (LoRa.available()) {
     temp = (char)LoRa.read();
     buf1 += temp;
@@ -200,7 +209,7 @@ void pager(){
         len = buf1.length();
         displaypacket(buf, len);
       //digitalWrite(LED, HIGH);
-      
+     }   
 }
 
 void loop() {
