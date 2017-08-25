@@ -17,6 +17,15 @@ definitions and the RadioHead radio library.
 
 http://www.airspayce.com/mikem/arduino/RadioHead/
 
+# Getting Started ESP32 Branch
+
+A TTGO WIFI_LoRa_32 board is used. These boards have a ESP32, OLED, LoRa SX1278 433Mhz Board, and battery connector. 
+https://www.aliexpress.com/item/TTGO-loraSX1278-ESP32-0-96OLED-16-Mt-bytes-128-Mt-bit-433Mhz-for-arduino/32824758955.html
+The library was changed to: arduino-LoRa
+https://github.com/sandeepmistry/arduino-LoRa 
+The sketches were modified to use the arduino-LoRa library, any other changes are outlined in the Sketches.
+Sketches were also renamed to reflect the usage of the ESP32.
+
 # Basics of the Protocol
 
 A Beacon is just a transmitter, and nothing else.  It doesn't receive
