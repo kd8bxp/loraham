@@ -10,8 +10,8 @@
  * LoRa Library Changed to: arduino-LoRa
  * https://github.com/sandeepmistry/arduino-LoRa
  * 
- * Addfruit_SSD1306 library changed to: ESP_SSD1306 library which is based on the Adafruit library written for the ESP devices
- * https://github.com/somhi/ESP_SSD1306
+ * Addfruit_SSD1306 library changed to: squix78 esp8266 ssd1306 library
+ * https://github.com/squix78/esp8266-oled-ssd1306
  * 
  * Wish List/Ideas to improve:
  * 
@@ -21,7 +21,7 @@
  *    one feature: ALL messages (BEACON) or CALLSIGN ONLY messages
  * 3) WIFI website or api to send messages   
  * 4) MAYBE a bluetooth keyboard to send messages
- * 
+ * 5) add button to review previous received message.
  */
 
 
@@ -64,38 +64,8 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 
 void radioon(){
   /*
-   * // I don't believe this is needed for this board/library (?)
-  Serial.println("Feather LoRa RX Test!");
-  
-  // manual reset
-  digitalWrite(RFM95_RST, LOW);
-  delay(10);
-  digitalWrite(RFM95_RST, HIGH);
-  delay(10);
- 
-  while (!rf95.init()) {
-    Serial.println("LoRa radio init failed");
-    while (1);
-  }
-  Serial.println("LoRa radio init OK!");
- 
-  // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
-  if (!rf95.setFrequency(RF95_FREQ)) {
-    Serial.println("setFrequency failed");
-    while (1);
-  }
-  Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
-  
- 
-  // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
- 
-  // The default transmitter power is 13dBm, using PA_BOOST.
-  // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then 
-  // you can set transmitter powers from 5 to 23 dBm:
-  rf95.setTxPower(23, false);
-  Serial.println("Set power to 23.");
-  Serial.print("Max packet length: "); Serial.println(RH_RF95_MAX_MESSAGE_LEN);
-*/
+   * I don't believe this is needed for this board/library (?)  
+   */
 }
 
 void radiooff(){
@@ -109,21 +79,16 @@ void radiooff(){
 
 void displaypacket(char *pkt, int len){
   pkt[len]=0;
+    
   // Clear the buffer.
   display.clear();
-
-
-  // text display tests
- // display.setTextSize(1);
   display.setColor(WHITE);
-  //display.setCursor(0,0);
-  display.drawString(0,0,(char*) pkt);
-  //display.println("KK4VCZ de KD2JHL");
-  //display.setColor(BLACK, WHITE); // 'inverted' text
-  //display.println("The quick brown fox  jumps over the lazy  dog.");
-  //display.setTextSize(2);
-  //display.setColor(WHITE);
-  //display.print("0x"); display.println(0xDEADBEEF, HEX);
+  display.drawStringMaxWidth(0,0,100,(char*) pkt);
+  //display.drawString(0,0,(String)pkt.substring(0,16));
+  //display.drawString(0,10,(String)pkt.substring(17,33));
+  //display.drawString(0,20,(String)pkt.substring(34,50));
+  //display.drawString(0,30,(String)pkt.substring(51,67));
+  //display.drawString(0,40,(String)pkt.substring(68,84));
   display.display();
   delay(2000);
   display.clear();
@@ -134,26 +99,25 @@ void setup() {
   digitalWrite(16, LOW);    // set GPIO16 low to reset OLED
   delay(50); 
   digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
-  
-   pinMode(LED, OUTPUT);
+  pinMode(LED, OUTPUT);
   Serial.begin(9600);
 
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
-  
   display.clear();
-  //display.setTextSize(1);
   display.setColor(WHITE);
-  //display.setCursor(0,0);
   display.drawString(0,0,"Callsign: ");
-  display.drawString(0,10,CALLSIGN);
-  display.drawString(0,20,"LoRaHam Pager by\nKK4VCZ.");
+  display.drawString(45, 0,CALLSIGN);
+  display.drawString(35,11,"LoRaHam Pager");
+  display.drawString(47,22,"by KK4VCZ.");
+  display.drawString(32,33,"ESP32 Pager by");
+  display.drawString(50,44,"KD8BXP.");
   display.display();
-  //display.clear();
-  //displaypacket(NULL);
-  delay(1000);
-
+  delay(3000);
+  display.clear();
+  display.display();
+  
   SPI.begin(5,19,27,18);
   LoRa.setPins(SS,RST,DI0);
   
@@ -208,8 +172,7 @@ void pager(){
         rssi=LoRa.packetRssi();
         len = buf1.length();
         displaypacket(buf, len);
-      //digitalWrite(LED, HIGH);
-     }   
+           }   
 }
 
 void loop() {
