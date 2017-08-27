@@ -83,15 +83,12 @@ void displaypacket(char *pkt, int len){
   // Clear the buffer.
   display.clear();
   display.setColor(WHITE);
-  display.drawStringMaxWidth(0,0,100,(char*) pkt);
-  //display.drawString(0,0,(String)pkt.substring(0,16));
-  //display.drawString(0,10,(String)pkt.substring(17,33));
-  //display.drawString(0,20,(String)pkt.substring(34,50));
-  //display.drawString(0,30,(String)pkt.substring(51,67));
-  //display.drawString(0,40,(String)pkt.substring(68,84));
+  display.drawStringMaxWidth(0,0,110, pkt);
+  display.println("");
   display.display();
-  delay(2000);
+  delay(5000); //need better way to do this, while delayed can't get new messages
   display.clear();
+  display.display();
 }
 
 void setup() {
@@ -114,7 +111,7 @@ void setup() {
   display.drawString(32,33,"ESP32 Pager by");
   display.drawString(50,44,"KD8BXP.");
   display.display();
-  delay(3000);
+  delay(3000); //while delayed can't get messages
   display.clear();
   display.display();
   
