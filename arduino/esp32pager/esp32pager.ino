@@ -95,10 +95,10 @@ void displaypacket(char *pkt, int len){
 
 void setup() {
   
-  pinMode(16,OUTPUT);
-  digitalWrite(16, LOW);    // set GPIO16 low to reset OLED
+  pinMode(OLED_RESET,OUTPUT);
+  digitalWrite(OLED_RESET, LOW);    // set GPIO16 low to reset OLED
   delay(50); 
-  digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
+  digitalWrite(OLED_RESET, HIGH); // while OLED is running, must set GPIO16 in high
   pinMode(LED, OUTPUT);
   Serial.begin(9600);
 

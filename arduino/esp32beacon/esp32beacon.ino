@@ -12,11 +12,19 @@
  * 
  */
 
-#define CALLSIGN "KD8BXP-10"
-#define COMMENTS "2600mAh ESP32"
+#define CALLSIGN "KD8BXP-10" 
+#define COMMENTS "2600mAh ESP32" 
  
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
+#include <Wire.h>
+#include "SSD1306.h"
+
+#define OLED_RESET  16  // Pin 16 -RESET digital signal
+#define OLED_SDA    4  // SDA-PIN for I2C OLED
+#define OLED_SCL    15  // SCL-PIN for I2C OLED
+
+SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 
 // WIFI_LoRa_32 ports
 
@@ -64,12 +72,33 @@ void radiooff(){
 
 void setup() 
 {
+  pinMode(OLED_RESET,OUTPUT);
+  digitalWrite(OLED_RESET, LOW);    // set GPIO16 low to reset OLED
+  delay(50); 
+  digitalWrite(OLED_RESET, HIGH); // while OLED is running, must set
   pinMode(LED, OUTPUT);
   Serial.begin(9600);
   Serial.setTimeout(10);
   while (!Serial); //if just the the basic function, must connect to a computer
   delay(1000);
-  Serial.println("BEACON"); 
+
+  display.init();
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_10);
+  display.clear();
+ /* display.setColor(WHITE);
+  display.drawString(0,0,"Callsign: ");
+  display.drawString(45, 0,CALLSIGN);
+  display.drawString(35,11,"LoRaHam Beacon");
+  display.drawString(47,22,"by KK4VCZ.");
+  display.drawString(32,33,"modified for ESP32");
+  display.drawString(50,44,"by KD8BXP.");
+  display.display();
+  delay(3000); //while delayed can't get messages
+  display.clear();
+  display.display();
+*/
+
   SPI.begin(5,19,27,18);
   LoRa.setPins(SS,RST,DI0);
   
@@ -101,7 +130,8 @@ void setup()
 
 //Transmits one beacon and returns.
 void beacon(){
-  
+  digitalWrite(LED, LOW);
+  digitalWrite(LED, HIGH);
   float vcc=voltage();
   //Serial.println("Transmitting..."); // Send a message to rf95_server
   char radiopacket[128];
@@ -121,8 +151,16 @@ void beacon(){
   LoRa.beginPacket();
   LoRa.print(radiopacket);
   LoRa.endPacket();
-  
+  display.clear();
+  display.setColor(WHITE);
+  display.drawStringMaxWidth(0,0,110, radiopacket);
+  display.println("");
+  display.display();
+  delay(1000);
+  display.clear();
+  display.display();
   packetnum++;
+  digitalWrite(LED, LOW);
 }
 
 void loop(){
