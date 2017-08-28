@@ -31,3 +31,7 @@ Specific to the ESP32 hardware:
 WIFI website/api to compose and send a short message from the pager. I think this will be fairly easy to do (?) Not sure how the ESP32 handles forms, so a API style maybe better (?)
 Lastly
 Using the ESP32 bluetooth and a bluetooth keyboard to compose and send a short message from the pager. I'm not even sure this can be done, it's just a thought.
+
+--------
+
+Aug 27, 2017 - Added Buzzer on Pin 32 - code as of right now just has a generic two tone sound, for any packet received.

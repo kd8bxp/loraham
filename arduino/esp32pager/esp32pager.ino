@@ -58,6 +58,8 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 #define DI0     26
 #define BAND    433E6 // Change to 434.0 or other frequency, must match RX's freq!
 
+#define CHANNEL 0 //Used for Tone Generation
+#define TONEPIN 32 //Pin USED for buzzer
 
 // Blinky on receipt
 #define LED 25
@@ -92,12 +94,16 @@ void displaypacket(char *pkt, int len){
 }
 
 void setup() {
+  
   pinMode(16,OUTPUT);
   digitalWrite(16, LOW);    // set GPIO16 low to reset OLED
   delay(50); 
   digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
   pinMode(LED, OUTPUT);
   Serial.begin(9600);
+
+ledcSetup(CHANNEL, 2000, 8);
+ledcAttachPin(TONEPIN, CHANNEL);
 
   display.init();
   display.flipScreenVertically();
@@ -158,7 +164,14 @@ void pager(){
      */
      int packetSize = LoRa.parsePacket();
      if (packetSize) {
-      digitalWrite(LED, HIGH);
+      digitalWrite(LED, HIGH); //Packet Received
+
+      //Generic Tone, doesn't check to see who/what the packet is for
+      ledcWriteTone(CHANNEL, 345);
+      delay(100);
+      ledcWriteTone(CHANNEL, 600);
+      delay(100);
+      ledcWriteTone(CHANNEL, 0);
      
   while (LoRa.available()) {
     temp = (char)LoRa.read();
