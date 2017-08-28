@@ -38,6 +38,8 @@
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  300        /* Time ESP32 will go to sleep (in seconds) 5 minutes*/
 
+RTC_DATA_ATTR int packetnum=0;
+
 //Returns the battery voltage as a float.
 float voltage(){
 
@@ -54,8 +56,8 @@ void radioon(){
 
 void radiooff(){
   //arduino-LoRa library provides a sleep, and a idle mode (Sleep is what I beleive we need here) 
-  // manual reset
-  //digitalWrite(RFM95_RST, LOW);
+  //I'm not sure this is needed once deep sleep was turned on. More
+  //Information is needed.
   LoRa.sleep();
   delay(10);
 }
@@ -63,14 +65,11 @@ void radiooff(){
 void setup() 
 {
   pinMode(LED, OUTPUT);
-  
-Serial.begin(9600);
-Serial.setTimeout(10);
+  Serial.begin(9600);
+  Serial.setTimeout(10);
   while (!Serial); //if just the the basic function, must connect to a computer
   delay(1000);
-  
   Serial.println("BEACON"); 
-  
   SPI.begin(5,19,27,18);
   LoRa.setPins(SS,RST,DI0);
   
@@ -84,8 +83,10 @@ Serial.setTimeout(10);
 }
 
 
-//! Uptime in seconds, correcting for rollover.
-long int uptime(){
+//! Uptime in seconds, correcting for rollover. 
+//Gives incorrect information since deep sleep installed. (always says
+// zero or null)
+  long int uptime(){
   static unsigned long rollover=0;
   static unsigned long lastmillis=millis();
 
@@ -100,11 +101,9 @@ long int uptime(){
 
 //Transmits one beacon and returns.
 void beacon(){
-  static int packetnum=0;
+  
   float vcc=voltage();
-  
   //Serial.println("Transmitting..."); // Send a message to rf95_server
-  
   char radiopacket[128];
   snprintf(radiopacket,
            128,
@@ -122,23 +121,15 @@ void beacon(){
   LoRa.beginPacket();
   LoRa.print(radiopacket);
   LoRa.endPacket();
-  //rf95.send((uint8_t *)radiopacket, strlen((char*) radiopacket));
- 
-  //Serial.println("Waiting for packet to complete..."); delay(10);
-  //rf95.waitPacketSent();
+  
   packetnum++;
 }
 
 void loop(){
-  //Turn the radio on.
-  //radioon();
   //Transmit a beacon once every five minutes.
   beacon();
   //Then turn the radio off to save power.
   radiooff();
-  
-  //Five minute delay between beacons.
-  //delay(5*60000);
   esp_deep_sleep_start();
 }
 
