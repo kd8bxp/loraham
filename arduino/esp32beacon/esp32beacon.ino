@@ -11,9 +11,10 @@
  * https://github.com/sandeepmistry/arduino-LoRa
  * 
  */
-
+#define TOCALL "BEACON"
 #define CALLSIGN "KD8BXP-10" 
 #define COMMENTS "2600mAh ESP32" 
+#define PROTOCOL "%s!%s!`%s VCC=%d.%03d count=%d uptime=%ld"
  
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
@@ -137,7 +138,8 @@ void beacon(){
   char radiopacket[128];
   snprintf(radiopacket,
            128,
-           "BEACON %s %s VCC=%d.%03d count=%d uptime=%ld",
+           PROTOCOL,
+           TOCALL,
            CALLSIGN,
            COMMENTS,
            (int) vcc,
@@ -153,10 +155,9 @@ void beacon(){
   LoRa.endPacket();
   display.clear();
   display.setColor(WHITE);
-  display.drawStringMaxWidth(0,0,110, radiopacket);
-  display.println("");
+  display.drawString(20, 15, "Sending...");
   display.display();
-  delay(1000);
+  delay(3000);
   display.clear();
   display.display();
   packetnum++;

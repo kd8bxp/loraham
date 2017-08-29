@@ -29,7 +29,7 @@
    BEACON frames.
  */
 #define CALLSIGN "BEACON"
-
+#define MYCALL "KD8BXP" //display messages addressed to my call
 
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
@@ -64,6 +64,8 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 // Blinky on receipt
 #define LED 25
 
+String TO, FROM, MESSAGE;
+
 void radioon(){
   /*
    * I don't believe this is needed for this board/library (?)  
@@ -79,13 +81,24 @@ void radiooff(){
 }
 
 
-void displaypacket(char *pkt, int len){
-  pkt[len]=0;
-    
+void displaypacket(String pkt){
+//  pkt[len]=0;
+    int placeHolder, placeHolder1, placeHolder2;
+    placeHolder = pkt.indexOf('!');
+    TO = pkt.substring(0,placeHolder);
+    placeHolder1 = pkt.indexOf('!', placeHolder+1);
+    FROM = pkt.substring(placeHolder+1, placeHolder1);
+    placeHolder2 = pkt.indexOf('`', placeHolder1+1);
+    MESSAGE = pkt.substring(placeHolder2+1);
   // Clear the buffer.
   display.clear();
   display.setColor(WHITE);
-  display.drawStringMaxWidth(0,0,110, pkt);
+  //display.drawStringMaxWidth(0,0,110, pkt);
+  display.drawString(0,0, "To:");
+  display.drawString(15,0, TO);
+  display.drawString(0, 10, "From:");
+  display.drawString(27, 10, FROM);
+  display.drawStringMaxWidth(0, 20,110, MESSAGE);
   display.println("");
   display.display();
   delay(5000); //need better way to do this, while delayed can't get new messages
@@ -110,8 +123,8 @@ ledcAttachPin(TONEPIN, CHANNEL);
   display.setFont(ArialMT_Plain_10);
   display.clear();
   display.setColor(WHITE);
-  display.drawString(0,0,"Callsign: ");
-  display.drawString(45, 0,CALLSIGN);
+  display.drawString(0,0,"My Call: ");
+  display.drawString(45, 0,MYCALL);
   display.drawString(35,11,"LoRaHam Pager");
   display.drawString(47,22,"by KK4VCZ.");
   display.drawString(32,33,"ESP32 Pager by");
@@ -137,7 +150,7 @@ ledcAttachPin(TONEPIN, CHANNEL);
 bool shouldirt(char *buf, uint8_t len){
   //Don't RT any packet containing our own callsign.
   //if(strcasestr((char*) buf, CALLSIGN)){
-    displaypacket(buf,len);
+    displaypacket(buf);
   //  return false;
   //}
   
@@ -181,7 +194,7 @@ void pager(){
   buf1.toCharArray(buf, buf1.length());
         rssi=LoRa.packetRssi();
         len = buf1.length();
-        displaypacket(buf, len);
+        displaypacket(buf);
            }   
 }
 
