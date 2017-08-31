@@ -10,16 +10,21 @@
  * Library Changed to: arduino-LoRa
  * https://github.com/sandeepmistry/arduino-LoRa
  * 
+ * Attempt to Tokenized LoRaHam Protocol to use JSON
+ * Library: https://github.com/bblanchon/ArduinoJson/
+ * 
  */
+ 
 #define TOCALL "BEACON"
 #define CALLSIGN "KD8BXP-10" 
 #define COMMENTS "2600mAh ESP32" 
-#define PROTOCOL "%s!%s!`%s VCC=%d.%03d count=%d uptime=%ld"
+//#define PROTOCOL "%s!%s!`%s VCC=%d.%03d count=%d uptime=%ld"
  
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
 #include <Wire.h>
 #include "SSD1306.h"
+#include <ArduinoJson.h>
 
 #define OLED_RESET  16  // Pin 16 -RESET digital signal
 #define OLED_SDA    4  // SDA-PIN for I2C OLED
@@ -110,6 +115,9 @@ void setup()
   LoRa.enableCrc(); //encable CRC checking - off by default
   digitalWrite(LED, LOW);
   esp_deep_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+
+//added for Json
+
 }
 
 
@@ -135,7 +143,17 @@ void beacon(){
   digitalWrite(LED, HIGH);
   float vcc=voltage();
   //Serial.println("Transmitting..."); // Send a message to rf95_server
-  char radiopacket[128];
+  StaticJsonBuffer<200> jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+  root["TO"] = TOCALL;
+  root["FROM"] = CALLSIGN;
+  
+  char TEMP[128];
+  snprintf(TEMP,128,"%s VCC=%d.%03d count=%d uptime=%ld",COMMENTS,(int)vcc,(int)(vcc*1000)%1000, packetnum,uptime());
+  root["MESSAGE"] = TEMP;
+  root["RT"] = "";
+  
+  /*char radiopacket[128];
   snprintf(radiopacket,
            128,
            PROTOCOL,
@@ -148,10 +166,14 @@ void beacon(){
            uptime());
 
   radiopacket[sizeof(radiopacket)] = 0;
-  
+  */
   //Serial.println("Sending..."); delay(10);
   LoRa.beginPacket();
+  //LoRa.print(radiopacket);
+  String radiopacket;
+  root.printTo(radiopacket);
   LoRa.print(radiopacket);
+  Serial.println(radiopacket);
   LoRa.endPacket();
   display.clear();
   display.setColor(WHITE);

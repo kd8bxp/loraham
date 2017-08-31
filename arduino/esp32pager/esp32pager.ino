@@ -13,6 +13,9 @@
  * Addfruit_SSD1306 library changed to: squix78 esp8266 ssd1306 library
  * https://github.com/squix78/esp8266-oled-ssd1306
  * 
+ * Attempt to Tokenized LoRaHam Protocol to use JSON
+ * Library: https://github.com/bblanchon/ArduinoJson/
+ * 
  * Wish List/Ideas to improve:
  * 
  * 1) Add buzzer, Buzzer when a message arrives for your Callsign
@@ -33,10 +36,9 @@
 
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
-
 #include <Wire.h>
-
 #include "SSD1306.h"
+#include <ArduinoJson.h>
 
 #define OLED_RESET  16  // Pin 16 -RESET digital signal
 #define OLED_SDA    4  // SDA-PIN for I2C OLED
@@ -64,7 +66,7 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 // Blinky on receipt
 #define LED 25
 
-String TO, FROM, MESSAGE;
+String TO, FROM, MESSAGE, RT;
 
 void radioon(){
   /*
@@ -80,9 +82,16 @@ void radiooff(){
   delay(10);
 }
 
-
 void displaypacket(String pkt){
-//  pkt[len]=0;
+  StaticJsonBuffer<200> jsonBuffer;
+JsonObject& root = jsonBuffer.parseObject(pkt);
+Serial.println(pkt);
+if (!root.success()) {
+    Serial.println("parseObject() failed");
+    
+  }
+
+/*//  pkt[len]=0;
     int placeHolder, placeHolder1, placeHolder2;
     placeHolder = pkt.indexOf('!');
     TO = pkt.substring(0,placeHolder);
@@ -90,7 +99,13 @@ void displaypacket(String pkt){
     FROM = pkt.substring(placeHolder+1, placeHolder1);
     placeHolder2 = pkt.indexOf('`', placeHolder1+1);
     MESSAGE = pkt.substring(placeHolder2+1);
-  // Clear the buffer.
+ */
+ // Clear the buffer.
+ String TO = root["TO"];
+ String FROM = root["FROM"];
+  String MESSAGE = root["MESSAGE"];
+  String RT = root["RT"];
+
   display.clear();
   display.setColor(WHITE);
   //display.drawStringMaxWidth(0,0,110, pkt);
@@ -190,10 +205,10 @@ void pager(){
     temp = (char)LoRa.read();
     buf1 += temp;
   }
-  char buf[buf1.length()];
-  buf1.toCharArray(buf, buf1.length());
+  char buf[buf1.length()+1];
+  buf1.toCharArray(buf, buf1.length()+1);
         rssi=LoRa.packetRssi();
-        len = buf1.length();
+        len = buf1.length()+1;
         displaypacket(buf);
            }   
 }
