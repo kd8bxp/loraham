@@ -19,7 +19,7 @@
  * Wish List/Ideas to improve:
  * 
  * 1) Add buzzer, Buzzer when a message arrives for your Callsign
- *    a different sound for BEACON messages
+ *    a different sound for BEACON messages (*DONE*)
  * 2) Add dip switches to turn on/off features.    
  *    one feature: ALL messages (BEACON) or CALLSIGN ONLY messages
  * 3) WIFI website or api to send messages   
@@ -32,7 +32,7 @@
    BEACON frames.
  */
 #define CALLSIGN "BEACON"
-#define MYCALL "KD8BXP" //display messages addressed to my call
+String MYCALL = "KD8BXP"; //display messages addressed to my call
 
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
@@ -82,7 +82,7 @@ void radiooff(){
   delay(10);
 }
 
-void displaypacket(String pkt){
+void decodePacket(String pkt) {
   StaticJsonBuffer<200> jsonBuffer;
 JsonObject& root = jsonBuffer.parseObject(pkt);
 Serial.println(pkt);
@@ -91,21 +91,19 @@ if (!root.success()) {
     
   }
 
-/*//  pkt[len]=0;
-    int placeHolder, placeHolder1, placeHolder2;
-    placeHolder = pkt.indexOf('!');
-    TO = pkt.substring(0,placeHolder);
-    placeHolder1 = pkt.indexOf('!', placeHolder+1);
-    FROM = pkt.substring(placeHolder+1, placeHolder1);
-    placeHolder2 = pkt.indexOf('`', placeHolder1+1);
-    MESSAGE = pkt.substring(placeHolder2+1);
- */
  // Clear the buffer.
- String TO = root["TO"];
- String FROM = root["FROM"];
-  String MESSAGE = root["MESSAGE"];
-  String RT = root["RT"];
+ String to = root["TO"];
+ String from = root["FROM"];
+ String message = root["MESSAGE"];
+String rt = root["RT"];
+ TO = to;
+ FROM = from;
+ MESSAGE = message;
+ RT = rt;
+}
 
+void displaypacket(){
+  
   display.clear();
   display.setColor(WHITE);
   //display.drawStringMaxWidth(0,0,110, pkt);
@@ -162,15 +160,39 @@ ledcAttachPin(TONEPIN, CHANNEL);
 
 
 //Handles retransmission of the packet.
-bool shouldirt(char *buf, uint8_t len){
+void shouldirt(){
+  Serial.println(TO.indexOf(MYCALL));
   //Don't RT any packet containing our own callsign.
-  //if(strcasestr((char*) buf, CALLSIGN)){
-    displaypacket(buf);
-  //  return false;
-  //}
-  
-  //No objections.  RT it!
-  return true;
+  if(TO == CALLSIGN){
+    //Generic Tone, doesn't check to see who/what the packet is for
+      ledcWriteTone(CHANNEL, 345);
+      delay(100);
+      ledcWriteTone(CHANNEL, 600);
+      delay(100);
+      ledcWriteTone(CHANNEL, 0);
+    displaypacket();
+  } else if (TO == "CQ") { //calling CQ
+     
+  } else if (TO == "NET") {
+    //calling/starting/talking to a NET
+  } else if (TO.indexOf("BLT") >= 0) {
+    //display a bulletin
+  } else if (TO == "SPCL") {
+    //special event stations
+  } else if (TO == "SENS") {
+    //display sensor information
+  } else if (TO == "WX") {
+    //display local WX station
+  }  else if (TO.indexOf(MYCALL) >= 0) { 
+    ledcWriteTone(CHANNEL, 600);
+    delay(100);
+    ledcWriteTone(CHANNEL, 1200);
+    delay(100);
+    displaypacket();
+  } else {
+    //RT Code
+  }
+   
 }
 
 //If a packet is available, digipeat it.  Otherwise, wait.
@@ -194,12 +216,7 @@ void pager(){
      if (packetSize) {
       digitalWrite(LED, HIGH); //Packet Received
 
-      //Generic Tone, doesn't check to see who/what the packet is for
-      ledcWriteTone(CHANNEL, 345);
-      delay(100);
-      ledcWriteTone(CHANNEL, 600);
-      delay(100);
-      ledcWriteTone(CHANNEL, 0);
+      
      
   while (LoRa.available()) {
     temp = (char)LoRa.read();
@@ -209,7 +226,8 @@ void pager(){
   buf1.toCharArray(buf, buf1.length()+1);
         rssi=LoRa.packetRssi();
         len = buf1.length()+1;
-        displaypacket(buf);
+        decodePacket(buf);
+        shouldirt();
            }   
 }
 

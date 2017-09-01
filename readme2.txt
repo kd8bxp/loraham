@@ -33,5 +33,22 @@ Lastly
 Using the ESP32 bluetooth and a bluetooth keyboard to compose and send a short message from the pager. I'm not even sure this can be done, it's just a thought.
 
 --------
+Aug 31, 2017 (More Ideas):
+I would also like to propose a change from using BEACON to maybe SENS for SENSOR data being passed, and reserve BEACON to announce that there is a LoRaHam network in the area.
+I would also like to propose adding the following:
+CQ - For general calling and see who is out there - pagers would get the CQ
+NET - used to start and respond to a NET
+BLT (0-9) Bulletins used to make announcements to everyone
+SPCL - for special event stations (I'm not sure if this would be used, but you never know)
+WX - for weather stations - LoRa and Microcontrollers really lean themselfs to something like this. (I would also say these stations should be keep local, and not gated.)
+SENS - Other type of sensor reading/RC control/etc - and should be keep local and not gated
+CMD - a specific (different) protocol to command and control a remote BEACON or DIGI - should only be used local, not gated and only by the system operator (I haven't thought much more about this so a lot of thought would have to be put into something like this)
+
+I would also suggest adding a general location to the protocol, that would help to keep packages that need to stay local - local. It wouldn't need to be precise maybe just the grid square like for me EM79 would work, even thou I do travel and sometime leave me "home" grid.
+
+-----------
+Attempt at a Change Log:
 
 Aug 27, 2017 - Added Buzzer on Pin 32 - code as of right now just has a generic two tone sound, for any packet received.
+Aug 31, 2017 - updated codes to use a JSON string.
+Sep 1, 2017 Pager Code updated to display BEACON and MYCALL messages other messages will be RT. Buzzer Sounds are different for each type of message.
