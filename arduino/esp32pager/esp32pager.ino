@@ -82,7 +82,7 @@ ESP32WebServer server(80);
 #define LED 25
 
 String TO, FROM, MSG1, RT;
-const char *ssid = "LoRaHam";
+char ssid[15]; //Create a Unique AP from MAC address
 const char *password = "pass1234"; //not a great password, you may want to change it.
 static int serverCore = 0; //run web server on this core. Loop() runs in core 1
 
@@ -138,8 +138,16 @@ void displaypacket(){
   display.display();
 }
 
-void setup() {
+void createSSID() {
   
+  uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
+  uint16_t chip = (uint16_t)(chipid>>32);
+  snprintf(ssid,15,"LoRaHam-%04X",chip);
+  
+}
+
+void setup() {
+  createSSID();
   pinMode(OLED_RESET,OUTPUT);
   digitalWrite(OLED_RESET, LOW);    // set GPIO16 low to reset OLED
   delay(50); 
@@ -163,6 +171,11 @@ ledcAttachPin(TONEPIN, CHANNEL);
   display.drawString(50,44,"KD8BXP.");
   display.display();
   delay(3000); //while delayed can't get messages
+  display.clear();
+  display.drawString(0,30,"SSID: ");
+  display.drawString(30,30,ssid);
+  display.display();
+  delay(3000);
   display.clear();
   display.display();
   
