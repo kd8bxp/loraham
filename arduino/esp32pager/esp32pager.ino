@@ -16,22 +16,34 @@
  * Attempt to Tokenized LoRaHam Protocol to use JSON
  * Library: https://github.com/bblanchon/ArduinoJson/
  * 
+ * Sept 2, 2017 Added ESP32 Webserver 
+ * Library Needed: http://www.fisch.lu/junk/ESP32-WebServer.zip (unofficial port of the ESP8266WebServer Library)
+ * More Information can be found in the Arduino-ESP32 issue tracker on github
+ * https://github.com/espressif/arduino-esp32/issues/425
+ * 
+ * Webserver default address (192.168.4.1) At this time I'm not sure how to change it.
+ * The webserver is made for small screens (Phones/Tablets) but does work from a desktop.
+ * root directory will show last message.
+ * /msg allows you to send a message (not yet fully ready for use)
+ * /msg2 is the API call 192.168.4.1/msg2?TO=KD8BXP&MSG=Some Message
+ * /cfg setup and change configuration of your pager from a website (not yet ready)
+ * 
  * Wish List/Ideas to improve:
  * 
  * 1) Add buzzer, Buzzer when a message arrives for your Callsign
  *    a different sound for BEACON messages (*DONE*)
  * 2) Add dip switches to turn on/off features.    
- *    one feature: ALL messages (BEACON) or CALLSIGN ONLY messages
- * 3) WIFI website or api to send messages   
- * 4) MAYBE a bluetooth keyboard to send messages
- * 5) add button to review previous received message.
+ *    one feature: ALL messages (BEACON) or CALLSIGN ONLY messages (in Webserver)
+ * 3) WIFI website or api to send messages (in progress)   
+ * 4) MAYBE a bluetooth keyboard to send messages (rejected)
+ * 5) add button to review previous received message. (In webserver)
  */
 
 
 /* Change this to your own callsign, or keep it as BEACON to view all
    BEACON frames.
  */
-#define CALLSIGN "BEACON"
+String CALLSIGN = ""; //USER Defined Special CallSign to receive and display
 String MYCALL = "KD8BXP"; //display messages addressed to my call
 
 #include <SPI.h>
@@ -71,7 +83,7 @@ ESP32WebServer server(80);
 
 String TO, FROM, MSG1, RT;
 const char *ssid = "LoRaHam";
-const char *password = "pass1234";
+const char *password = "pass1234"; //not a great password, you may want to change it.
 static int serverCore = 0; //run web server on this core. Loop() runs in core 1
 
 void serverTask( void * pvParameters ){
@@ -79,12 +91,6 @@ void serverTask( void * pvParameters ){
         server.handleClient();
     }
  
-}
-
-void radioon(){
-  /*
-   * I don't believe this is needed for this board/library (?)  
-   */
 }
 
 void radiooff(){
@@ -214,7 +220,14 @@ server.on("/", []()
 void shouldirt(){
   Serial.println(TO.indexOf(MYCALL));
   //Don't RT any packet containing our own callsign.
-  if(TO == CALLSIGN){
+  if (TO == CALLSIGN) {
+    ledcWriteTone(CHANNEL, 800);
+    delay(100);
+    ledcWriteTone(CHANNEL, 1200);
+    delay(100);
+    ledcWriteTone(CHANNEL, 0);
+    displaypacket();
+  } else if(TO == "BEACON"){
     //Generic Tone, doesn't check to see who/what the packet is for
       ledcWriteTone(CHANNEL, 345);
       delay(100);
