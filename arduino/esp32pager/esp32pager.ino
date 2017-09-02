@@ -39,12 +39,15 @@ String MYCALL = "KD8BXP"; //display messages addressed to my call
 #include <Wire.h>
 #include "SSD1306.h"
 #include <ArduinoJson.h>
+#include <WiFi.h>
+#include <ESP32WebServer.h>
 
 #define OLED_RESET  16  // Pin 16 -RESET digital signal
 #define OLED_SDA    4  // SDA-PIN for I2C OLED
 #define OLED_SCL    15  // SCL-PIN for I2C OLED
 
 SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
+ESP32WebServer server(80);
 
 // WIFI_LoRa_32 ports
 
@@ -66,7 +69,17 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 // Blinky on receipt
 #define LED 25
 
-String TO, FROM, MESSAGE, RT;
+String TO, FROM, MSG1, RT;
+const char *ssid = "LoRaHam";
+const char *password = "pass1234";
+static int serverCore = 0; //run web server on this core. Loop() runs in core 1
+
+void serverTask( void * pvParameters ){
+      while(true){
+        server.handleClient();
+    }
+ 
+}
 
 void radioon(){
   /*
@@ -94,11 +107,11 @@ if (!root.success()) {
  // Clear the buffer.
  String to = root["TO"];
  String from = root["FROM"];
- String message = root["MESSAGE"];
+ String msg1 = root["MESSAGE"];
 String rt = root["RT"];
  TO = to;
  FROM = from;
- MESSAGE = message;
+ MSG1 = msg1;
  RT = rt;
 }
 
@@ -111,7 +124,7 @@ void displaypacket(){
   display.drawString(15,0, TO);
   display.drawString(0, 10, "From:");
   display.drawString(27, 10, FROM);
-  display.drawStringMaxWidth(0, 20,110, MESSAGE);
+  display.drawStringMaxWidth(0, 20,110, MSG1);
   display.println("");
   display.display();
   delay(5000); //need better way to do this, while delayed can't get new messages
@@ -156,6 +169,44 @@ ledcAttachPin(TONEPIN, CHANNEL);
   }
   LoRa.enableCrc(); //encable CRC checking - off by default
   digitalWrite(LED, LOW);
+   WiFi.softAP(ssid, password);
+    IPAddress myIP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.print(myIP);
+server.on("/", []()
+      {
+        String temp;
+        temp = "<meta name=viewport content='width=200'><center><h1>LoRaHam</h1></center>Last Message:<br><br>To: " + TO +"<br>From: " +FROM+"<br>Message: "+MSG1+"<br>RT: "+RT+"<br><br><a href=\"/msg\">Send Message!</a>";
+        Serial.println(temp);
+        server.send(200, "text/html", temp);
+      });
+      
+    server.on("/cfg", []()
+      {
+        server.send(200, "text/html", "CFG Screen");
+      });
+
+    server.on("/msg", []()
+      {
+        String form = "<meta name=viewport content='width=200'><style>input, textarea {max-width:100%}</style><p><center><form action='msg2'><p></center>TO: <input type='text' name='TO' size=15 vaule='"+FROM+"' autofocus><br>Message: <input type='text' name='MSG1' size=75><center><br><br> <input type='submit' value='Submit'></form></center>";
+        server.send(200, "text/html", form);// And as regular external functions:
+      });
+
+    server.on("/msg2", []()
+      {
+        server.send(200,"text/html","Nothing Here Yet!");
+      });
+    server.begin();
+
+    xTaskCreatePinnedToCore(
+                    serverTask,   /* Function to implement the task */
+                    "coreTask", /* Name of the task */
+                    10000,      /* Stack size in words */
+                    NULL,       /* Task input parameter */
+                    0,          /* Priority of the task */
+                    NULL,       /* Task handle. */
+                    serverCore);  /* Core where the task should run */
+ 
 }
 
 
