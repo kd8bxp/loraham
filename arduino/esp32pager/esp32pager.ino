@@ -85,66 +85,7 @@ String TO, FROM, MSG1, RT;
 char ssid[15]; //Create a Unique AP from MAC address
 const char *password = "pass1234"; //not a great password, you may want to change it.
 static int serverCore = 0; //run web server on this core. Loop() runs in core 1
-
-void serverTask( void * pvParameters ){
-      while(true){
-        server.handleClient();
-    }
- 
-}
-
-void radiooff(){
-  //arduino-LoRa library provides a sleep, and a idle mode (Sleep is what I beleive we need here) 
-  // manual reset
-  //digitalWrite(RFM95_RST, LOW);
-  LoRa.sleep();
-  delay(10);
-}
-
-void decodePacket(String pkt) {
-  StaticJsonBuffer<200> jsonBuffer;
-JsonObject& root = jsonBuffer.parseObject(pkt);
-Serial.println(pkt);
-if (!root.success()) {
-    Serial.println("parseObject() failed");
-    
-  }
-
- // Clear the buffer.
- String to = root["TO"];
- String from = root["FROM"];
- String msg1 = root["MESSAGE"];
-String rt = root["RT"];
- TO = to;
- FROM = from;
- MSG1 = msg1;
- RT = rt;
-}
-
-void displaypacket(){
-  
-  display.clear();
-  display.setColor(WHITE);
-  //display.drawStringMaxWidth(0,0,110, pkt);
-  display.drawString(0,0, "To:");
-  display.drawString(15,0, TO);
-  display.drawString(0, 10, "From:");
-  display.drawString(27, 10, FROM);
-  display.drawStringMaxWidth(0, 20,110, MSG1);
-  display.println("");
-  display.display();
-  delay(5000); //need better way to do this, while delayed can't get new messages
-  display.clear();
-  display.display();
-}
-
-void createSSID() {
-  
-  uint64_t chipid=ESP.getEfuseMac();//The chip ID is essentially its MAC address(length: 6 bytes).
-  uint16_t chip = (uint16_t)(chipid>>32);
-  snprintf(ssid,15,"LoRaHam-%04X",chip);
-  
-}
+int rssi=0;
 
 void setup() {
   createSSID();
@@ -228,87 +169,8 @@ server.on("/", []()
  
 }
 
-
-//Handles retransmission of the packet.
-void shouldirt(){
-  Serial.println(TO.indexOf(MYCALL));
-  //Don't RT any packet containing our own callsign.
-  if (TO == CALLSIGN) {
-    ledcWriteTone(CHANNEL, 800);
-    delay(100);
-    ledcWriteTone(CHANNEL, 1200);
-    delay(100);
-    ledcWriteTone(CHANNEL, 0);
-    displaypacket();
-  } else if(TO == "BEACON"){
-    //Generic Tone, doesn't check to see who/what the packet is for
-      ledcWriteTone(CHANNEL, 345);
-      delay(100);
-      ledcWriteTone(CHANNEL, 600);
-      delay(100);
-      ledcWriteTone(CHANNEL, 0);
-    displaypacket();
-  } else if (TO == "CQ") { //calling CQ
-     
-  } else if (TO == "NET") {
-    //calling/starting/talking to a NET
-  } else if (TO.indexOf("BLT") >= 0) {
-    //display a bulletin
-  } else if (TO == "SPCL") {
-    //special event stations
-  } else if (TO == "SENS") {
-    //display sensor information
-  } else if (TO == "WX") {
-    //display local WX station
-  }  else if (TO.indexOf(MYCALL) >= 0) { 
-    ledcWriteTone(CHANNEL, 600);
-    delay(100);
-    ledcWriteTone(CHANNEL, 1200);
-    delay(100);
-    displaypacket();
-  } else {
-    //RT Code
-  }
-   
-}
-
-//If a packet is available, digipeat it.  Otherwise, wait.
-void pager(){
-  digitalWrite(LED, LOW);
-  //Try to receive a reply.
-  
-    String buf1;
-    uint8_t len;
-    int rssi=0;
-  char temp;
-    /*
-     * When we receive a packet, we repeat it after a random
-     * delay if:
-     * 1. It asks to be repeated.
-     * 2. We've not yet received a different packet.
-     * 3. We've waited a random amount of time.
-     * 4. The first word is not RT.
-     */
-     int packetSize = LoRa.parsePacket();
-     if (packetSize) {
-      digitalWrite(LED, HIGH); //Packet Received
-
-      
-     
-  while (LoRa.available()) {
-    temp = (char)LoRa.read();
-    buf1 += temp;
-  }
-  char buf[buf1.length()+1];
-  buf1.toCharArray(buf, buf1.length()+1);
-        rssi=LoRa.packetRssi();
-        len = buf1.length()+1;
-        decodePacket(buf);
-        shouldirt();
-           }   
-}
-
 void loop() {
   // put your main code here, to run repeatedly:
   pager();
+  vTaskDelay(10);
 }

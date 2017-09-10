@@ -18,7 +18,6 @@
 #define TOCALL "BEACON"
 #define CALLSIGN "KD8BXP-10" 
 #define COMMENTS "2600mAh ESP32" 
-//#define PROTOCOL "%s!%s!`%s VCC=%d.%03d count=%d uptime=%ld"
  
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
@@ -54,27 +53,6 @@ SSD1306 display(0x3c, OLED_SDA, OLED_SCL); // FOR I2C
 
 RTC_DATA_ATTR int packetnum=0;
 
-//Returns the battery voltage as a float.
-float voltage(){
-
-  float measuredvbat = analogRead(VBATPIN);
-  measuredvbat *= 2;    // we divided by 2, so multiply back
-  measuredvbat *= 3.3;  // Multiply by 3.3V, our reference voltage
-  measuredvbat /= 1024; // convert to voltage
-  return measuredvbat;
-}
-
-void radioon(){
- 
-}
-
-void radiooff(){
-  //arduino-LoRa library provides a sleep, and a idle mode (Sleep is what I beleive we need here) 
-  //I'm not sure this is needed once deep sleep was turned on. More
-  //Information is needed.
-  LoRa.sleep();
-  delay(10);
-}
 
 void setup() 
 {
@@ -118,72 +96,6 @@ void setup()
 
 //added for Json
 
-}
-
-
-//! Uptime in seconds, correcting for rollover. 
-//Gives incorrect information since deep sleep installed. (always says
-// zero or null)
-  long int uptime(){
-  static unsigned long rollover=0;
-  static unsigned long lastmillis=millis();
-
-  //Account for rollovers, every ~50 days or so.
-  if(lastmillis>millis()){
-    rollover+=(lastmillis>>10);
-    lastmillis=millis();
-  }
-
-  return(rollover+(millis()>>10));
-}
-
-//Transmits one beacon and returns.
-void beacon(){
-  digitalWrite(LED, LOW);
-  digitalWrite(LED, HIGH);
-  float vcc=voltage();
-  //Serial.println("Transmitting..."); // Send a message to rf95_server
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject& root = jsonBuffer.createObject();
-  root["TO"] = TOCALL;
-  root["FROM"] = CALLSIGN;
-  
-  char TEMP[128];
-  snprintf(TEMP,128,"%s VCC=%d.%03d count=%d uptime=%ld",COMMENTS,(int)vcc,(int)(vcc*1000)%1000, packetnum,uptime());
-  root["MESSAGE"] = TEMP;
-  root["RT"] = "";
-  
-  /*char radiopacket[128];
-  snprintf(radiopacket,
-           128,
-           PROTOCOL,
-           TOCALL,
-           CALLSIGN,
-           COMMENTS,
-           (int) vcc,
-           (int) (vcc*1000)%1000,
-           packetnum,
-           uptime());
-
-  radiopacket[sizeof(radiopacket)] = 0;
-  */
-  //Serial.println("Sending..."); delay(10);
-  LoRa.beginPacket();
-  //LoRa.print(radiopacket);
-  String radiopacket;
-  root.printTo(radiopacket);
-  LoRa.print(radiopacket);
-  Serial.println(radiopacket);
-  LoRa.endPacket();
-  display.clear();
-  display.setColor(WHITE);
-  display.drawString(20, 15, "Sending...");
-  display.display();
-  delay(3000);
-  display.clear();
-  display.display();
-  packetnum++;
-  digitalWrite(LED, LOW);
 }
 
 void loop(){
