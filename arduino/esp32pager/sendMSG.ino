@@ -1,4 +1,4 @@
-void digipeat(){
+void sendMSG(){
   digitalWrite(LED, LOW);
   digitalWrite(LED, HIGH);
   //float vcc=voltage();
@@ -6,10 +6,10 @@ void digipeat(){
   StaticJsonBuffer<200> jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
   root["TO"] = TO;
-  root["FROM"] = FROM;
+  root["FROM"] = MYCALL;
   root["MESSAGE"] = MSG1;
-  root["RT"] = MYCALL + " rssi=" + (String)rssi;
-   
+  root["RT"] = "";
+  
   //Serial.println("Sending..."); delay(10);
   LoRa.beginPacket();
   //LoRa.print(radiopacket);
@@ -27,4 +27,3 @@ void digipeat(){
   display.display();
   digitalWrite(LED, LOW);
 }
-

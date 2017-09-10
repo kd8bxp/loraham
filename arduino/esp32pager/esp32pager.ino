@@ -28,6 +28,12 @@
  * /msg2 is the API call 192.168.4.1/msg2?TO=KD8BXP&MSG=Some Message
  * /cfg setup and change configuration of your pager from a website (not yet ready)
  * 
+ * Sept 9, 2017 Broke out functions to own tabs (easier to read, easier to edit),
+ * added code to RT (digipeat) and (Sept 10) added send message code from website
+ * 
+ *  *Breaking the functions out will also help to add or create a new device.
+ *      * digipeat and sendMSG are almost the same code, it should be possiable to combine with some if statements (etc)
+ *      
  * Wish List/Ideas to improve:
  * 
  * 1) Add buzzer, Buzzer when a message arrives for your Callsign
@@ -36,15 +42,13 @@
  *    one feature: ALL messages (BEACON) or CALLSIGN ONLY messages (in Webserver)
  * 3) WIFI website or api to send messages (in progress)   
  * 4) MAYBE a bluetooth keyboard to send messages (rejected)
- * 5) add button to review previous received message. (In webserver)
+ * 5) add button to review previous received message. (*In webserver - Works DONE*)
+ * 
  */
-
-
-/* Change this to your own callsign, or keep it as BEACON to view all
-   BEACON frames.
- */
+ 
 String CALLSIGN = ""; //USER Defined Special CallSign to receive and display
-String MYCALL = "KD8BXP"; //display messages addressed to my call
+String MYCALL = "KD8BXP"; //display messages addressed to my call (or my call and ssid)
+//May need to add a append SSID to MYCALL option 
 
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
@@ -82,8 +86,8 @@ ESP32WebServer server(80);
 #define LED 25
 
 String TO, FROM, MSG1, RT;
-char ssid[15]; //Create a Unique AP from MAC address
-const char *password = "pass1234"; //not a great password, you may want to change it.
+char ssid[15]; //Create a Unique AP from MAC address * Creates an AP named "LoRaHam-xxxx' where xxxx is part of the MAC address of device.
+const char *password = "pass1234"; //Access Point (AP) Password: not a great password, you may want to change it. 
 static int serverCore = 0; //run web server on this core. Loop() runs in core 1
 int rssi=0;
 
@@ -102,23 +106,7 @@ ledcAttachPin(TONEPIN, CHANNEL);
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
-  display.clear();
-  display.setColor(WHITE);
-  display.drawString(0,0,"My Call: ");
-  display.drawString(45, 0,MYCALL);
-  display.drawString(35,11,"LoRaHam Pager");
-  display.drawString(47,22,"by KK4VCZ.");
-  display.drawString(32,33,"ESP32 Pager by");
-  display.drawString(50,44,"KD8BXP.");
-  display.display();
-  delay(3000); //while delayed can't get messages
-  display.clear();
-  display.drawString(0,30,"SSID: ");
-  display.drawString(30,30,ssid);
-  display.display();
-  delay(3000);
-  display.clear();
-  display.display();
+  displayIntro();
   
   SPI.begin(5,19,27,18);
   LoRa.setPins(SS,RST,DI0);
@@ -133,29 +121,10 @@ ledcAttachPin(TONEPIN, CHANNEL);
     IPAddress myIP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
     Serial.print(myIP);
-server.on("/", []()
-      {
-        String temp;
-        temp = "<meta name=viewport content='width=200'><center><h1>LoRaHam</h1></center>Last Message:<br><br>To: " + TO +"<br>From: " +FROM+"<br>Message: "+MSG1+"<br>RT: "+RT+"<br><br><a href=\"/msg\">Send Message!</a>";
-        Serial.println(temp);
-        server.send(200, "text/html", temp);
-      });
-      
-    server.on("/cfg", []()
-      {
-        server.send(200, "text/html", "CFG Screen");
-      });
-
-    server.on("/msg", []()
-      {
-        String form = "<meta name=viewport content='width=200'><style>input, textarea {max-width:100%}</style><p><center><form action='msg2'><p></center>TO: <input type='text' name='TO' size=15 vaule='"+FROM+"' autofocus><br>Message: <input type='text' name='MSG1' size=75><center><br><br> <input type='submit' value='Submit'></form></center>";
-        server.send(200, "text/html", form);// And as regular external functions:
-      });
-
-    server.on("/msg2", []()
-      {
-        server.send(200,"text/html","Nothing Here Yet!");
-      });
+    server.on("/", webRoot);
+    server.on("/cfg", webCFG);
+    server.on("/msg", webEnterMSG);
+    server.on("/msg2", webProcessMSG);
     server.begin();
 
     xTaskCreatePinnedToCore(
