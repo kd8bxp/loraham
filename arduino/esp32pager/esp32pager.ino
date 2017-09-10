@@ -49,6 +49,10 @@
 String CALLSIGN = ""; //USER Defined Special CallSign to receive and display
 String MYCALL = "KD8BXP"; //display messages addressed to my call (or my call and ssid)
 //May need to add a append SSID to MYCALL option 
+String MYDEVICETYPE = "PAGER"; //can be GATEWAY, BEACON, DIGIPEAT, or PAGER
+String MYGRID = "EM79";
+String MYDEVICEID; //figure what I need to do to make a device ID 
+String RXTIME, RXDATE, CFGOTHER;
 
 #include <SPI.h>
 #include <LoRa.h> //https://github.com/sandeepmistry/arduino-LoRa
@@ -85,7 +89,9 @@ ESP32WebServer server(80);
 // Blinky on receipt
 #define LED 25
 
-String TO, FROM, MSG1, RT;
+String TO, FROM, MSG1, TXTIME, TXDATE, GRID, TYPE, OTHER, TXDEVICEID;
+char RTCALL[5],RTRSSI[5],RTDEVICEID[5],RTDEVICETYPE[5],RTTIME[5],RTDATE[5];
+int RTCNT;
 char ssid[15]; //Create a Unique AP from MAC address * Creates an AP named "LoRaHam-xxxx' where xxxx is part of the MAC address of device.
 const char *password = "pass1234"; //Access Point (AP) Password: not a great password, you may want to change it. 
 static int serverCore = 0; //run web server on this core. Loop() runs in core 1

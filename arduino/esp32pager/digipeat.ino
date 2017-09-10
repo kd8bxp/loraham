@@ -1,9 +1,12 @@
 void digipeat(){
+  //Check if count is too high and check if I have already RT.
+  bool haveirt = haveialready(); //check to see if I have already RT the package
+  if (haveirt == false) {
   digitalWrite(LED, LOW);
   digitalWrite(LED, HIGH);
   //float vcc=voltage();
   //Serial.println("Transmitting..."); // Send a message to rf95_server
-  StaticJsonBuffer<200> jsonBuffer;
+  DynamicJsonBuffer jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
   root["TO"] = TO;
   root["FROM"] = FROM;
@@ -26,5 +29,15 @@ void digipeat(){
   display.clear();
   display.display();
   digitalWrite(LED, LOW);
+  }
+}
+
+bool haveialready() {
+  if (RTCNT < 6) { 
+   for (int xx=0; xx < RTCNT;xx++) {
+    if (RTCALL[xx].indexOf(MYCALL) >= 0) {return true;} else { return true; }
+   }
+}
+return false;
 }
 
